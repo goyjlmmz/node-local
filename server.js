@@ -1,15 +1,41 @@
 let http = require('http')
 let fs = require('fs')
 let path = require('path')
+let URL = require('url')
 
+const mime = {
+  "css": "text/css",
+  "gif": "image/gif",
+  "html": "text/html",
+  "ico": "image/x-icon",
+  "jpeg": "image/jpeg",
+  "jpg": "image/jpeg",
+  "js": "text/javascript",
+  "json": "application/json",
+  "pdf": "application/pdf",
+  "png": "image/png",
+  "svg": "image/svg+xml",
+  "swf": "application/x-shockwave-flash",
+  "tiff": "image/tiff",
+  "txt": "text/plain",
+  "wav": "audio/x-wav",
+  "wma": "audio/x-ms-wma",
+  "wmv": "video/x-ms-wmv",
+  "xml": "text/xml"
+}
 //哪些url请求需要代理（代理配置）
 let conifg = {
-  '/xxx': {
-    target: 'xxx'
+  '/t.do': {
+    target: 'http://pps.cmgame.com:9092'
+  },
+
+  '/activity': {
+    target: 'http://pps.cmgame.com:9092'
   }
 }
 
 let app = http.createServer(function (request, response) {
+
   let url = request.url
   if (request.url !== '/favicon.ico') { //清除第二次访问
     //请求的数据是否存在代理
@@ -29,16 +55,34 @@ let app = http.createServer(function (request, response) {
         return;
       }
     }
-    let _path = path.join(__dirname,'/src' , url)
+
+    // url = url.substring(0, url.indexOf('?'))
 
     console.log(url)
+
     //正常的读取文件和其他资源加载
-    fs.readFile(__dirname + (url === '/' ? '/src/index.html' : '/src' + url), 'utf-8', function (err, data) {
-    // fs.readFile(_path, 'utf-8', function (err, data) {
+    // let realPath = path.join(__dirname, ((url.indexOf('html') != -1) ? '/src/index.html' : '/src' + url))
+    let realPath = path.join(__dirname, ((url.indexOf('html') != -1) ? (url.indexOf('index') != -1 ? '/src/index.html' : '/src/gopay.html') : '/src' + url))
+
+
+
+    // console.log(realPath, realPath1)
+
+    fs.readFile(realPath, 'binary', function (err, data) {
+
       if (err) {
         console.log('file-err', err)
       } else {
-        response.end(data)
+        var ext = path.extname(realPath);
+        ext = ext ? ext.slice(1) : 'unknown';
+
+        var contentType = mime[ext] || "text/plain";
+        response.writeHead(200, {
+          'Content-Type': contentType
+        });
+        response.write(data, "binary");
+        response.end();
+        // response.end(data)
       }
     });
   }
